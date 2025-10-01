@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Live Demo
+
+- Production: https://net-usage.vercel.app/ (redirects to `/usage-alchemist`)
+
 ## Getting Started
 
 First, run the development server:
