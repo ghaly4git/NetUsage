@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+// removed calendar link
 
 type SegmentedOption<T extends string | number> = {
   value: T;
@@ -41,7 +42,29 @@ function SegmentedControl<T extends string | number>({
 
 export default function UsageAlchemist() {
   const [dayNumber, setDayNumber] = useState<number | null>(null);
-  const [daysInMonth, setDaysInMonth] = useState<30 | 31>(31);
+  const [packSizeInput, setPackSizeInput] = useState<string>("375");
+  const MONTHS = useMemo(
+    () => [
+      { name: "January", days: 31 },
+      { name: "February", days: 28 },
+      { name: "March", days: 31 },
+      { name: "April", days: 30 },
+      { name: "May", days: 31 },
+      { name: "June", days: 30 },
+      { name: "July", days: 31 },
+      { name: "August", days: 31 },
+      { name: "September", days: 30 },
+      { name: "October", days: 31 },
+      { name: "November", days: 30 },
+      { name: "December", days: 31 },
+    ],
+    []
+  );
+  const [selectedMonth, setSelectedMonth] = useState<string>("January");
+  const daysInMonth = useMemo(() => {
+    const month = MONTHS.find((m) => m.name === selectedMonth);
+    return month ? (month.days as 28 | 30 | 31) : 31;
+  }, [MONTHS, selectedMonth]);
   const [result, setResult] = useState<number | null>(null);
   const [animatedResult, setAnimatedResult] = useState(0);
 
@@ -53,19 +76,26 @@ export default function UsageAlchemist() {
       })),
     []
   );
-  const monthOptions: Array<SegmentedOption<30 | 31>> = [
-    { value: 30, label: "30 Days" },
-    { value: 31, label: "31 Days" },
-  ];
+  const monthOptions: Array<SegmentedOption<string>> = useMemo(
+    () => MONTHS.map((m) => ({ value: m.name, label: m.name })),
+    [MONTHS]
+  );
 
   useEffect(() => {
-    if (dayNumber && daysInMonth) {
-      const allowance = daysInMonth === 30 ? dayNumber * 12.5 : dayNumber * 12;
+    const numericPackSize = parseFloat(packSizeInput);
+    if (
+      dayNumber &&
+      daysInMonth &&
+      Number.isFinite(numericPackSize) &&
+      numericPackSize > 0
+    ) {
+      const perDay = numericPackSize / daysInMonth;
+      const allowance = dayNumber * perDay;
       setResult(allowance);
     } else {
       setResult(null);
     }
-  }, [dayNumber, daysInMonth]);
+  }, [dayNumber, daysInMonth, packSizeInput]);
 
   useEffect(() => {
     if (result === null) {
@@ -95,7 +125,8 @@ export default function UsageAlchemist() {
 
   const handleReset = () => {
     setDayNumber(null);
-    setDaysInMonth(31);
+    setSelectedMonth("January");
+    setPackSizeInput("375");
   };
 
   return (
@@ -159,13 +190,27 @@ export default function UsageAlchemist() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Days In The Month
+                  Month
                 </label>
                 <SegmentedControl
                   options={monthOptions}
-                  selected={daysInMonth}
-                  onChange={(val) => setDaysInMonth(val as 30 | 31)}
-                  name="daysInMonth"
+                  selected={selectedMonth}
+                  onChange={(val) => setSelectedMonth(val as string)}
+                  name="month"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Pack Size (GB)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={packSizeInput}
+                  onChange={(e) => setPackSizeInput(e.target.value)}
+                  className="w-full rounded-md bg-slate-700/50 border border-slate-600 px-3 py-2 text-slate-100 placeholder-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
+                  placeholder="375"
                 />
               </div>
             </div>
@@ -176,9 +221,11 @@ export default function UsageAlchemist() {
               <h2 className="text-lg font-medium text-slate-400">
                 Your Usage Allowance
               </h2>
-              <div className="my-4 text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 tracking-tight">
-                {animatedResult.toFixed(1)}
-                <span className="text-4xl ml-2 opacity-70">units</span>
+              <div className="my-4 flex items-baseline justify-center gap-2 tracking-tight">
+                <span className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+                  {animatedResult.toFixed(1)}
+                </span>
+                <span className="text-4xl opacity-70 text-slate-200">GB</span>
               </div>
               <p className="text-slate-400 mb-6">
                 Based on Day {dayNumber} in a {daysInMonth}-day month.
